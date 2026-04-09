@@ -3,7 +3,7 @@ set -euo pipefail
 
 if [[ $# -ne 1 ]]; then
   echo "Usage: $0 <image-tag>"
-  echo "Example: $0 a1b2c3d"
+  echo "Example: $0 7f4b599"
   exit 1
 fi
 

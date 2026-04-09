@@ -7,10 +7,8 @@ pipeline {
   }
 
   environment {
-    // Set these in Jenkins (Manage Credentials / Global env):
-    // - DOCKERHUB_USER, DOCKERHUB_TOKEN (or use an AWS ECR login step instead)
-    // - SONARQUBE_SERVER (configured in Jenkins SonarQube plugin as "sonarqube")
-    // - SONAR_TOKEN (credential)
+    // Jenkins creds/env needed:
+    // DOCKERHUB_USER, DOCKERHUB_TOKEN, SONAR_TOKEN
     REGISTRY = "${env.DOCKERHUB_USER}"
     IMAGE_TAG = "${env.GIT_COMMIT?.take(7) ?: 'local'}"
     GITOPS_BRANCH = 'main'
@@ -57,7 +55,7 @@ pipeline {
 
     stage('OWASP Dependency-Check') {
       steps {
-        // Requires "OWASP Dependency-Check Plugin" in Jenkins
+        // Needs OWASP Dependency-Check plugin configured as "dependency-check"
         dependencyCheck additionalArguments: '--failOnCVSS 7', odcInstallation: 'dependency-check'
         dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
       }
