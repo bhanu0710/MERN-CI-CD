@@ -1,0 +1,56 @@
+namespace:
+  create: true
+  name: mern
+
+images:
+  frontend:
+    repository: bhanu0710/mern-frontend
+    tag: latest
+  backend:
+    repository: bhanu0710/mern-backend
+    tag: latest
+  mongo: mongo:7
+
+frontend:
+  replicas: 2
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+
+backend:
+  replicas: 2
+  corsOrigin: "*"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+mongodb:
+  storage: 5Gi
+  auth:
+    username: root
+    password: change-me
+
+ingress:
+  enabled: true
+  className: nginx
+  host: mern.local
+
+hpa:
+  enabled: true
+  backend:
+    minReplicas: 2
+    maxReplicas: 8
+    targetCPUUtilizationPercentage: 60
+  frontend:
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 60
+

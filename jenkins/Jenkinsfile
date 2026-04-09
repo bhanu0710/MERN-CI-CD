@@ -1,0 +1,109 @@
+pipeline {
+  agent any
+
+  options {
+    timestamps()
+    ansiColor('xterm')
+  }
+
+  environment {
+    // Set these in Jenkins (Manage Credentials / Global env):
+    // - DOCKERHUB_USER, DOCKERHUB_TOKEN (or use an AWS ECR login step instead)
+    // - SONARQUBE_SERVER (configured in Jenkins SonarQube plugin as "sonarqube")
+    // - SONAR_TOKEN (credential)
+    REGISTRY = "${env.DOCKERHUB_USER}"
+    IMAGE_TAG = "${env.GIT_COMMIT?.take(7) ?: 'local'}"
+    GITOPS_BRANCH = 'main'
+  }
+
+  stages {
+    stage('Install & Test (Backend)') {
+      steps {
+        dir('app/backend') {
+          sh 'npm ci'
+          sh 'npm test'
+        }
+      }
+    }
+
+    stage('Install & Build (Frontend)') {
+      steps {
+        dir('app/frontend') {
+          sh 'npm ci'
+          sh 'npm run build'
+        }
+      }
+    }
+
+    stage('SonarQube Scan') {
+      steps {
+        withSonarQubeEnv('sonarqube') {
+          sh '''
+            sonar-scanner \
+              -Dsonar.login=$SONAR_TOKEN \
+              -Dproject.settings=sonarqube/sonar-project.properties
+          '''
+        }
+      }
+    }
+
+    stage('Quality Gate') {
+      steps {
+        timeout(time: 10, unit: 'MINUTES') {
+          waitForQualityGate abortPipeline: true
+        }
+      }
+    }
+
+    stage('OWASP Dependency-Check') {
+      steps {
+        // Requires "OWASP Dependency-Check Plugin" in Jenkins
+        dependencyCheck additionalArguments: '--failOnCVSS 7', odcInstallation: 'dependency-check'
+        dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+      }
+    }
+
+    stage('Docker Build & Push') {
+      when { expression { return env.DOCKERHUB_USER?.trim() } }
+      steps {
+        sh '''
+          echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USER" --password-stdin
+
+          docker build -f docker/backend.Dockerfile -t "$REGISTRY/mern-backend:$IMAGE_TAG" .
+          docker build -f docker/frontend.Dockerfile -t "$REGISTRY/mern-frontend:$IMAGE_TAG" .
+
+          docker push "$REGISTRY/mern-backend:$IMAGE_TAG"
+          docker push "$REGISTRY/mern-frontend:$IMAGE_TAG"
+        '''
+      }
+    }
+
+    stage('GitOps Tag Update') {
+      when {
+        allOf {
+          expression { return env.DOCKERHUB_USER?.trim() }
+          branch 'main'
+        }
+      }
+      steps {
+        sh '''
+          set -euo pipefail
+
+          sed -i.bak -E "s|^(\\s*tag:\\s*).*$|\\1${IMAGE_TAG}|g" helm/mern-app/values.yaml
+          rm -f helm/mern-app/values.yaml.bak
+
+          git add helm/mern-app/values.yaml
+
+          if git diff --cached --quiet; then
+            echo "No Helm tag changes to commit."
+            exit 0
+          fi
+
+          git -c user.name="ci-bot" -c user.email="ci-bot@local" commit -m "chore(gitops): promote images to ${IMAGE_TAG}"
+          git push origin HEAD:${GITOPS_BRANCH}
+        '''
+      }
+    }
+  }
+}
+

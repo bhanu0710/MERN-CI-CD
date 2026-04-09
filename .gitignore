@@ -1,0 +1,30 @@
+**/.DS_Store
+**/.idea
+**/.vscode
+
+# Node
+**/node_modules/
+**/dist/
+**/build/
+**/.cache/
+**/.eslintcache
+**/.npm/
+**/.pnpm-store/
+**/.yarn/
+**/.turbo/
+**/.next/
+
+# Env / secrets
+**/.env
+**/.env.*
+!**/.env.example
+
+# Terraform
+**/.terraform/
+**/.terraform.lock.hcl
+**/terraform.tfstate
+**/terraform.tfstate.*
+**/crash.log
+
+# Logs
+**/*.log
