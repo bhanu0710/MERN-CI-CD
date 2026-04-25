@@ -13,10 +13,22 @@ spec:
       labels:
         app: backend
     spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: backend
           image: bhanu0710/mern-backend:stable
           imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           ports:
             - containerPort: 8080
               name: http
@@ -26,9 +38,12 @@ spec:
             - name: NODE_ENV
               value: "production"
             - name: CORS_ORIGIN
-              value: "*"
+              value: "https://mern.example.com"
             - name: MONGODB_URI
-              value: mongodb://root:change-me@mongodb:27017/mern_demo?authSource=admin
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-auth
+                  key: uri
           readinessProbe:
             httpGet:
               path: /api/health
@@ -48,4 +63,3 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
-

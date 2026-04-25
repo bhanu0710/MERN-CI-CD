@@ -13,10 +13,21 @@ spec:
       labels:
         app: frontend
     spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: frontend
           image: "{{ .Values.images.frontend.repository }}:{{ .Values.images.frontend.tag }}"
           imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           ports:
             - containerPort: 80
               name: http
@@ -47,4 +58,3 @@ spec:
     - name: http
       port: 80
       targetPort: http
-

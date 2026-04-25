@@ -6,6 +6,14 @@ terraform {
       version = ">= 5.0"
     }
   }
+
+  backend "s3" {
+    bucket         = "bhanu0710-mern-eks-cicd-tf-state"
+    key            = "mern-eks-cicd/terraform.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+    dynamodb_table = "terraform-state-lock"
+  }
 }
 
 provider "aws" {
@@ -30,7 +38,8 @@ module "vpc" {
   public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
 
   enable_nat_gateway     = true
-  single_nat_gateway     = true
+  single_nat_gateway     = false
+  one_nat_gateway_per_az = true
   enable_dns_hostnames   = true
   enable_dns_support     = true
 
@@ -38,4 +47,3 @@ module "vpc" {
     Project = var.cluster_name
   }
 }
-

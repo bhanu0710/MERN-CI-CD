@@ -7,6 +7,10 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-body-size: "1m"
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+        - mern.local
+      secretName: mern-tls
   rules:
     - host: mern.local
       http:
@@ -25,4 +29,3 @@ spec:
                 name: frontend
                 port:
                   number: 80
-

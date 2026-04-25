@@ -38,7 +38,7 @@ pipeline {
         withSonarQubeEnv('sonarqube') {
           sh '''
             sonar-scanner \
-              -Dsonar.login=$SONAR_TOKEN \
+              -Dsonar.token=$SONAR_TOKEN \
               -Dproject.settings=sonarqube/sonar-project.properties
           '''
         }
@@ -76,6 +76,16 @@ pipeline {
       }
     }
 
+    stage('Image Scan (Trivy)') {
+      when { expression { return env.DOCKERHUB_USER?.trim() } }
+      steps {
+        sh '''
+          trivy image --exit-code 1 --severity HIGH,CRITICAL "$REGISTRY/mern-backend:$IMAGE_TAG"
+          trivy image --exit-code 1 --severity HIGH,CRITICAL "$REGISTRY/mern-frontend:$IMAGE_TAG"
+        '''
+      }
+    }
+
     stage('GitOps Tag Update') {
       when {
         allOf {
@@ -103,5 +113,14 @@ pipeline {
       }
     }
   }
-}
 
+  post {
+    always {
+      sh 'docker logout || true'
+      cleanWs()
+    }
+    failure {
+      echo 'Pipeline failed — check logs above.'
+    }
+  }
+}

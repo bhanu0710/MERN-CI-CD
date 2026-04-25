@@ -1,12 +1,9 @@
-apiVersion: v1
-kind: Secret
-metadata:
-  name: mongodb-auth
-  namespace: mern
-type: Opaque
-stringData:
-  username: root
-  password: change-me
+# Secret must be created before applying this manifest:
+# kubectl create secret generic mongodb-auth \
+#   --from-literal=uri='mongodb://root:CHANGE_ME@mongodb:27017/mern_demo?authSource=admin' \
+#   --from-literal=username='root' \
+#   --from-literal=password='CHANGE_ME' \
+#   -n mern
 ---
 apiVersion: v1
 kind: Service
@@ -38,9 +35,20 @@ spec:
       labels:
         app: mongodb
     spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: mongodb
           image: mongo:7
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           ports:
             - containerPort: 27017
               name: mongo
@@ -65,6 +73,13 @@ spec:
               port: 27017
             initialDelaySeconds: 10
             periodSeconds: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
           volumeMounts:
             - name: mongo-data
               mountPath: /data/db
@@ -76,4 +91,3 @@ spec:
         resources:
           requests:
             storage: 5Gi
-

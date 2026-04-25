@@ -8,6 +8,12 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-body-size: "1m"
 spec:
   ingressClassName: {{ .Values.ingress.className | quote }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host | quote }}
+      secretName: {{ .Values.ingress.tls.secretName | quote }}
+  {{- end }}
   rules:
     - host: {{ .Values.ingress.host | quote }}
       http:
@@ -27,4 +33,3 @@ spec:
                 port:
                   number: 80
 {{- end }}
-

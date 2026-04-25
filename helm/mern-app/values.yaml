@@ -5,10 +5,10 @@ namespace:
 images:
   frontend:
     repository: bhanu0710/mern-frontend
-    tag: latest
+    tag: stable
   backend:
     repository: bhanu0710/mern-backend
-    tag: latest
+    tag: stable
   mongo: mongo:7
 
 frontend:
@@ -23,7 +23,7 @@ frontend:
 
 backend:
   replicas: 2
-  corsOrigin: "*"
+  corsOrigin: "https://mern.example.com"
   resources:
     requests:
       cpu: 100m
@@ -36,12 +36,15 @@ mongodb:
   storage: 5Gi
   auth:
     username: root
-    password: change-me
+    # password set via kubernetes secret — see helm/mern-app/templates/mongodb.yaml for kubectl command
 
 ingress:
   enabled: true
   className: nginx
   host: mern.local
+  tls:
+    enabled: true
+    secretName: mern-tls
 
 hpa:
   enabled: true
@@ -53,4 +56,3 @@ hpa:
     minReplicas: 2
     maxReplicas: 6
     targetCPUUtilizationPercentage: 60
-

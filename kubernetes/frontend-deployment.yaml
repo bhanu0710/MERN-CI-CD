@@ -13,10 +13,21 @@ spec:
       labels:
         app: frontend
     spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: frontend
           image: bhanu0710/mern-frontend:stable
           imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           ports:
             - containerPort: 80
               name: http
@@ -39,4 +50,3 @@ spec:
             limits:
               cpu: 300m
               memory: 256Mi
-
